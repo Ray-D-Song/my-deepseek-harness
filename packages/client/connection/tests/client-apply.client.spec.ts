@@ -23,6 +23,7 @@ afterEach(() => {
   delete (globalThis as Win).location
   delete (globalThis as Win).__DSH_TRANSPORT__
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   vi.useRealTimers()
 })
 
@@ -132,6 +133,12 @@ describe('connection client apply', () => {
   it('reports non-loopback page authority through the connection handle', async () => {
     ;(globalThis as Win).location = { hostname: '192.0.2.20' }
     expect((await mount()).isLoopback).toBe(false)
+  })
+
+  it('allows an explicitly enabled remote settings browser', async () => {
+    vi.stubEnv('DSH_CLIENT_ALLOW_REMOTE_SETTINGS', '1')
+    ;(globalThis as Win).location = { hostname: 'dsh.ray-d-song.com' }
+    expect((await mount()).isLoopback).toBe(true)
   })
 
   it('requires one generation source and ignores a stale source disposer', async () => {
