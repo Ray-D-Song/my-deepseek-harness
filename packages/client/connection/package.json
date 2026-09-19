@@ -36,6 +36,7 @@
   "dependencies": {
     "@deepseek-ai/dsh-credentials": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^",
+    "jose": "^6.2.3",
     "zod": "^4.4.3"
   },
   "files": [

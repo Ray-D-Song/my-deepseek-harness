@@ -100,7 +100,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
   }
 
   /** Authenticate an index request through the process-token exchange or cookie. */
-  authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean {
+  async authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): Promise<boolean> {
     return this.browserAuth.authorizeIndex(request, response)
   }
 

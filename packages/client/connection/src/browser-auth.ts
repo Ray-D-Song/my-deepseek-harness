@@ -8,6 +8,7 @@ import type {
   ConnectionIndexResponse,
   ConnectionTrustRequest,
 } from './rpc.ts'
+import type { CloudflareAccessVerifier } from './cloudflare-access.ts'
 
 const AUTH_RECORD_KEY = credentialKey('client-connection', 'browser-session')
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000
@@ -190,6 +191,7 @@ export class BrowserAuth {
     processOwner: object,
     private readonly secret: Buffer,
     maxAgeDays: number,
+    private readonly cloudflareAccess?: CloudflareAccessVerifier,
   ) {
     this.launchToken = processLaunchToken(processOwner)
     this.maxAgeMilliseconds = maxAgeDays * DAY_MILLISECONDS
@@ -211,8 +213,9 @@ export class BrowserAuth {
     processOwner: object,
     credentials: CredentialProvider,
     maxAgeDays: number,
+    cloudflareAccess?: CloudflareAccessVerifier,
   ): Promise<BrowserAuth> {
-    return new BrowserAuth(processOwner, await initializeSecret(credentials), maxAgeDays)
+    return new BrowserAuth(processOwner, await initializeSecret(credentials), maxAgeDays, cloudflareAccess)
   }
 
   /**
@@ -237,7 +240,7 @@ export class BrowserAuth {
    * @param res - response owned when this method returns false.
    * @returns true only when the caller may serve index.html.
    */
-  authorizeIndex(req: ConnectionIndexRequest, res: ConnectionIndexResponse): boolean {
+  async authorizeIndex(req: ConnectionIndexRequest, res: ConnectionIndexResponse): Promise<boolean> {
     /* v8 ignore next -- node:http always supplies url on server requests. */
     const url = new URL(req.url ?? '/', 'http://dsh.invalid')
     const tokens = url.searchParams.getAll(TOKEN_QUERY)
@@ -245,23 +248,7 @@ export class BrowserAuth {
       const authority = requestAuthority(req.headers)
       if (req.method === 'GET' && url.pathname === '/' && tokens.length === 1
         && authority !== undefined && tokenMatches(tokens.join(''), this.launchToken)) {
-        const issuedAt = Date.now()
-        const expiresAt = issuedAt + this.maxAgeMilliseconds
-        const value = encodeCookie({
-          version: COOKIE_PAYLOAD_VERSION,
-          authority,
-          issuedAt,
-          expiresAt,
-        }, this.secret)
-        res.writeHead(303, {
-          'cache-control': 'no-store',
-          'location': '/',
-          'referrer-policy': 'no-referrer',
-          'set-cookie': sessionCookie(
-            cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
-          ),
-        })
-        res.end()
+        this.issueSession(authority, res)
         return false
       }
       if (req.method === 'GET' && url.pathname === '/' && this.isAuthenticated(req)) {
@@ -277,8 +264,35 @@ export class BrowserAuth {
       return false
     }
     if (this.isAuthenticated(req)) return true
+    if (req.method === 'GET' && url.pathname === '/' && this.cloudflareAccess !== undefined
+      && await this.cloudflareAccess.verify(req.headers)) {
+      const authority = requestAuthority(req.headers)
+      if (authority !== undefined) this.issueSession(authority, res)
+      else this.writeUnauthorized(req, res)
+      return false
+    }
     this.writeUnauthorized(req, res)
     return false
+  }
+
+  private issueSession(authority: string, res: ConnectionIndexResponse): void {
+    const issuedAt = Date.now()
+    const expiresAt = issuedAt + this.maxAgeMilliseconds
+    const value = encodeCookie({
+      version: COOKIE_PAYLOAD_VERSION,
+      authority,
+      issuedAt,
+      expiresAt,
+    }, this.secret)
+    res.writeHead(303, {
+      'cache-control': 'no-store',
+      'location': '/',
+      'referrer-policy': 'no-referrer',
+      'set-cookie': sessionCookie(
+        cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
+      ),
+    })
+    res.end()
   }
 
   /**

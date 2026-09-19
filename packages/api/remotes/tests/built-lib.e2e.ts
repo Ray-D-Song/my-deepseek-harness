@@ -116,9 +116,9 @@ describe.skipIf(!requiredArtifacts)('Goal Remote built LIB chain', () => {
       if (routes.length !== 1 || routes[0].path !== '/api') {
         throw new Error('Connection did not register exactly one /api route')
       }
-      const server = createServer((request, response) => {
+      const server = createServer(async (request, response) => {
         if ((request.url ?? '/').startsWith('/?')) {
-          if (host.connection.authorizeIndex(request, response)) {
+          if (await host.connection.authorizeIndex(request, response)) {
             response.writeHead(200, { 'content-type': 'text/html' })
             response.end('<body>shell</body>')
           }

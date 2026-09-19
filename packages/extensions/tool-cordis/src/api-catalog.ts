@@ -761,7 +761,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'rejection status, or undefined when the route may accept the request.',
       },
       {
-        signature: 'authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean',
+        signature: 'authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): Promise<boolean>',
         description: 'Authenticate one frontend index request, owning a token redirect or 401.',
         parameters: [{ name: 'request', description: 'root or configured-index HTTP request.' }, { name: 'response', description: 'response owned when the result is false.' }],
         returns: 'true only when the frontend may serve index.html.',
