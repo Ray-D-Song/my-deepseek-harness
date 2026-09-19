@@ -113,9 +113,9 @@ export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
   cookieMaxAgeDays: z.natural().min(1).default(30),
   cloudflareAccess: z.object({
-    teamDomain: String,
-    audience: String,
-  }).optional(),
+    teamDomain: z.string().required(),
+    audience: z.string().required(),
+  }),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
 
