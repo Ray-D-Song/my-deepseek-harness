@@ -103,7 +103,7 @@ export interface ConnectionConfig {
   /** Absolute browser-session lifetime in days. Default: 30. */
   cookieMaxAgeDays?: number
   /** Optional Cloudflare Access JWT bootstrap for the browser session. */
-  cloudflareAccess?: CloudflareAccessConfig
+  cloudflareAccess?: CloudflareAccessConfig | undefined
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
   maxRequestBodyBytes?: number
 }
