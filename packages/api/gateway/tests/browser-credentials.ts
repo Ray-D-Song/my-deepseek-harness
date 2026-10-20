@@ -23,13 +23,13 @@ export function provideBrowserCredentials(ctx: Context): void {
  * @param ctx - Host root with the Web server and Connection mounted.
  * @returns the `cookie` header value, cached per root.
  */
-export function browserCookie(ctx: Context): string {
+export async function browserCookie(ctx: Context): Promise<string> {
   const existing = browserCookies.get(ctx)
   if (existing !== undefined) return existing
   const origin = `http://127.0.0.1:${String(ctx.webServer.port)}`
   const target = new URL(ctx.connection.authenticatedUrl(origin))
   let setCookie: string | undefined
-  ctx.connection.authorizeIndex({
+  await ctx.connection.authorizeIndex({
     method: 'GET',
     url: `${target.pathname}${target.search}`,
     headers: { host: target.host },
