@@ -3,8 +3,11 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type { ConnectionTrustRequest } from './rpc.ts'
 
+/** Cloudflare Access bootstrap configuration for the browser session. */
 export interface CloudflareAccessConfig {
+  /** Cloudflare Access team origin (HTTPS) whose `/cdn-cgi/access/certs` JWKS signs the tokens. */
   readonly teamDomain: string
+  /** Expected JWT `aud` claim of issued Access tokens. */
   readonly audience: string
 }
 
@@ -48,6 +51,11 @@ export class CloudflareAccessVerifier {
     )
   }
 
+  /**
+   * Build a verifier from the connection configuration.
+   * @param config - Access team domain and expected audience, or undefined to disable verification.
+   * @returns a verifier, or undefined when Access is not configured.
+   */
   static create(config: CloudflareAccessConfig | undefined): CloudflareAccessVerifier | undefined {
     if (config === undefined) return undefined
     if (config.audience.trim() === '') {
@@ -56,6 +64,11 @@ export class CloudflareAccessVerifier {
     return new CloudflareAccessVerifier(canonicalTeamDomain(config.teamDomain), config.audience)
   }
 
+  /**
+   * Verify the request's `cf-access-jwt-assertion` header against the team JWKS.
+   * @param headers - request headers carrying the Access JWT assertion.
+   * @returns true when the assertion verifies, false for absent, oversized, or invalid tokens.
+   */
   async verify(headers: ConnectionTrustRequest['headers']): Promise<boolean> {
     const token = header(headers, 'cf-access-jwt-assertion')
     if (token === undefined || token.length > 16 * 1024) return false

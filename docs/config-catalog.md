@@ -435,7 +435,7 @@ export type Config = LocalConfig
 ## `@deepseek-ai/dsh-client-connection`
 
 - `inject`: `credentials`
-- `source`: [`packages/client/connection/src/index.ts:96`](../packages/client/connection/src/index.ts)
+- `source`: [`packages/client/connection/src/index.ts:100`](../packages/client/connection/src/index.ts)
 
 ```ts config-catalog
 /** Browser authentication, request limits, and connection recovery configuration. */
@@ -451,6 +451,8 @@ export interface ConnectionConfig {
   trustedHosts?: string[]
   /** Absolute browser and API cookie lifetime in days. Default: 30. */
   cookieMaxAgeDays?: number
+  /** Optional Cloudflare Access JWT bootstrap for the browser session. */
+  cloudflareAccess?: CloudflareAccessConfig | undefined
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
   maxRequestBodyBytes?: number
 }
@@ -470,6 +472,14 @@ export interface ConnectionRecoveryConfig {
   generationReadyWarnMs?: number
   /** Deadline in ms for readiness, including physical connection setup. Default: 15000. */
   generationReadyTimeoutMs?: number
+}
+
+/** Cloudflare Access bootstrap configuration for the browser session. */
+export interface CloudflareAccessConfig {
+  /** Cloudflare Access team origin (HTTPS) whose `/cdn-cgi/access/certs` JWKS signs the tokens. */
+  readonly teamDomain: string
+  /** Expected JWT `aud` claim of issued Access tokens. */
+  readonly audience: string
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-connection -->
